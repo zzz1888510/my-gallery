@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日和写真館 | 自动更新版</title>
+    <style>
+        :root { --bg: #fcfaf7; --text: #555; --card-bg: #ffffff; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: "PingFang SC", serif; }
+        
+        header { padding: 60px 20px; text-align: center; }
+        h1 { font-weight: 300; letter-spacing: 5px; color: #333; margin: 0; }
+        .subtitle { font-size: 0.8rem; color: #999; margin-top: 10px; letter-spacing: 2px; }
+
+        /* 响应式网格布局 */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        #gallery { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 30px; 
+        }
+
+        /* 日系拍立得卡片样式 */
+        .photo-card {
+            background: var(--card-bg);
+            padding: 12px 12px 30px 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 2px;
+            transition: 0.3s;
+            opacity: 0; /* 初始隐藏，用于入场动画 */
+            transform: translateY(20px);
+        }
+        .photo-card.show { opacity: 1; transform: translateY(0); }
+        .photo-card img { 
+            width: 100%; height: auto; display: block; 
+            filter: saturate(0.95) contrast(0.9);
+        }
+        .photo-date { margin-top: 15px; font-size: 0.7rem; color: #ccc; text-align: center; }
+
+        footer { text-align: center; padding: 50px; font-size: 0.7rem; color: #bbb; letter-spacing: 1px; }
+        
+        /* 加载动画 */
+        #loader { text-align: center; padding: 50px; color: #a8b69f; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>日和写真館</h1>
+    <div class="subtitle">ここにあるのは、日常の光影</div>
+</header>
+
+<div class="container">
+    <div id="loader">正在加载光影...</div>
+    <div id="gallery"></div>
+</div>
+
+<footer>&copy; 2026 PHOTOGRAPHY PORTFOLIO</footer>
+
+<script>
+    /** * 配置信息：请修改以下两个参数
+     **/
+const GITHUB_USER = 'zzz1888510'; 
+const REPO_NAME = 'my-gallery'; // 刚才建的仓库名
+const FOLDER_PATH = 'photos';   // 存放照片的文件夹
+
+    async function fetchPhotos() {
+        const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/${FOLDER_PATH}`;
+        const gallery = document.getElementById('gallery');
+        const loader = document.getElementById('loader');
+
+        try {
+            const response = await fetch(apiUrl);
+            const files = await response.json();
+
+            // 过滤图片格式
+            const imageFiles = files.filter(file => 
+                /\.(jpe?g|png|gif|webp)$/i.test(file.name)
+            );
+
+            loader.style.display = 'none';
+
+            imageFiles.forEach((file, index) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                
+                // 使用 jsDelivr CDN 加速图片访问
+                const imageUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${REPO_NAME}/${FOLDER_PATH}/${file.name}`;
+                
+                card.innerHTML = `
+                    <img src="${imageUrl}" alt="Gallery Image">
+                    <div class="photo-date">${file.name.split('.')[0]}</div>
+                `;
+                
+                gallery.appendChild(card);
+
+                // 简单的入场动效
+                setTimeout(() => card.classList.add('show'), index * 100);
+            });
+
+        } catch (error) {
+            loader.innerText = '加载失败，请检查配置或图片文件夹是否存在。';
+            console.error(error);
+        }
+    }
+
+    fetchPhotos();
+</script>
+</body>
+</html>
